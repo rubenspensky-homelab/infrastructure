@@ -1,15 +1,43 @@
 ---
-- name: Enable Debian non-free repositories
+- name: Check Debian deb822 apt sources
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/debian.sources
+  register: debian_deb822_sources
+
+- name: Check Debian classic apt sources
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list
+  register: debian_classic_sources
+
+- name: Fail when Debian apt sources are not found
+  ansible.builtin.fail:
+    msg: "Neither /etc/apt/sources.list.d/debian.sources nor /etc/apt/sources.list exists. Cannot enable Debian non-free repositories."
+  when:
+    - not debian_deb822_sources.stat.exists
+    - not debian_classic_sources.stat.exists
+
+- name: Enable Debian non-free repositories in deb822 sources
   ansible.builtin.replace:
     path: /etc/apt/sources.list.d/debian.sources
     regexp: '^Components:.*$'
     replace: "Components: {{ nvidia_gpu_debian_components }}"
-  register: debian_sources_components
+  register: debian_deb822_sources_components
+  when: debian_deb822_sources.stat.exists
+
+- name: Enable Debian non-free repositories in classic sources
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list
+    regexp: '^(\s*deb(?:-src)?\s+(?:\[[^]]+\]\s+)?(?:https?://)?(?:deb\.debian\.org|security\.debian\.org)/\S+\s+\S+\s+).*$'
+    replace: '\1{{ nvidia_gpu_debian_components }}'
+  register: debian_classic_sources_components
+  when: debian_classic_sources.stat.exists
 
 - name: Update apt cache after enabling non-free repositories
   ansible.builtin.apt:
     update_cache: true
-  when: debian_sources_components.changed
+  when: >-
+    debian_deb822_sources_components.changed | default(false)
+    or debian_classic_sources_components.changed | default(false)
 
 - name: Install NVIDIA driver packages
   ansible.builtin.apt:

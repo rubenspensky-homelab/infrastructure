@@ -1,4 +1,22 @@
 ---
 - name: Configure hostname
   ansible.builtin.hostname:
-    name: "{{ hostname }}"
+    name: "{{ inventory_hostname }}"
+
+- name: Configure localhost hosts entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.0\.1\s+'
+    line: '127.0.0.1 localhost'
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure inventory hostname hosts entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+'
+    line: '127.0.1.1 {{ inventory_hostname }}'
+    owner: root
+    group: root
+    mode: "0644"

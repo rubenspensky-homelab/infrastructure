@@ -1,3 +1,0 @@
----
-containerd_enable_nvidia: true
-containerd_default_runtime_name: "nvidia"

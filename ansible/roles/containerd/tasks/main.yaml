@@ -38,7 +38,7 @@
       [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
         SystemdCgroup = true
 
-      {% if containerd_enable_nvidia | bool %}
+      {% if 'gpu' in group_names %}
       [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
         runtime_type = "io.containerd.runc.v2"
 
