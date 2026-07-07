@@ -1,0 +1,43 @@
+# Debian installer inputs and generated artifacts
+*.iso
+autoinstall-os/dist/
+autoinstall-os/work/
+
+# Terraform local state and cache
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.kubeconfig
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Ansible local/runtime files
+*.retry
+.vault_pass
+vault-password.txt
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
