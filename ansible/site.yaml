@@ -35,6 +35,7 @@
   become: true
 
   roles:
+    - storage
     - k8s_control_plane
     - helm
     - cilium

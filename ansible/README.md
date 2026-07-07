@@ -13,6 +13,7 @@ This directory bootstraps Debian nodes for the homelab Kubernetes cluster.
 - Helm installation.
 - Argo CD installation as a separate cluster addon.
 - NVIDIA driver and container runtime configuration for GPU nodes.
+- Control plane HDD/SSD storage mounts for backups, static data, and fast local Kubernetes storage.
 
 The NVIDIA device plugin is intentionally not installed by Ansible. It should be managed later through Argo CD.
 
@@ -28,6 +29,8 @@ ansible/
       group_vars/
         all.yaml
         k8s_cluster.yaml
+      host_vars/
+        k8s-control-01.yaml
     test-worker2-control-plane/
       hosts.ini
       group_vars/
@@ -44,6 +47,7 @@ ansible/
     kubeadm/
     k8s_control_plane/
     nvidia_gpu/
+    storage/
     helm/
     cilium/
     k8s_worker/
@@ -167,9 +171,32 @@ Expected flow:
 2. Apply laptop power settings to the two laptop workers.
 3. Configure NVIDIA host GPU support on nodes in the `gpu` group.
 4. Install Kubernetes prerequisites, containerd, kubelet, kubeadm, and kubectl.
-5. Initialize the control plane on `k8s-control-01`.
-6. Install Helm and Cilium on the control plane.
-7. Join worker nodes to the cluster.
+5. Mount control plane HDD/SSD storage.
+6. Initialize the control plane on `k8s-control-01`.
+7. Install Helm and Cilium on the control plane.
+8. Join worker nodes to the cluster.
+
+## Control Plane Storage
+
+`k8s-control-01` storage settings live in `inventories/lab/host_vars/k8s-control-01.yaml` so the storage role does not hardcode disk IDs.
+
+The role intentionally uses stable `/dev/disk/by-id` paths for disk selection and persistent mount identifiers for mounts:
+
+- System disk is configured only for safety checks and must never be modified.
+- HDD storage mounts the existing ext4 filesystem by UUID at `/mnt/hdd-storage` and does not format it.
+- SSD storage creates one GPT partition on the configured disk ID, formats that partition as ext4 with label `ssd-storage`, and mounts it at `/mnt/ssd-storage`.
+
+Install required Ansible collections with:
+
+```sh
+ansible-galaxy collection install -r requirements.yaml
+```
+
+Run only the control plane storage/bootstrap path with:
+
+```sh
+ansible-playbook site.yaml --limit k8s-control-01
+```
 
 ## NVIDIA GPU
 

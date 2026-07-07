@@ -1,0 +1,27 @@
+---
+storage_system_disk_id: /dev/disk/by-id/ata-PNY_CS900_480GB_SSD_PNY4519191104030431D
+
+storage_hdd_enabled: true
+storage_hdd_format: false
+storage_hdd_disk_id: /dev/disk/by-id/ata-ST2000DM001-1ER164_S4Z080G9
+storage_hdd_uuid: 10548396-c9aa-488b-86cf-4dfb89cd46ca
+storage_hdd_mount_path: /mnt/hdd-storage
+storage_hdd_directories:
+  - /mnt/hdd-storage/backups
+  - /mnt/hdd-storage/backups/velero
+  - /mnt/hdd-storage/backups/postgres
+  - /mnt/hdd-storage/static
+  - /mnt/hdd-storage/archive
+
+storage_ssd_enabled: true
+storage_ssd_partition: true
+storage_ssd_format: true
+storage_ssd_disk_id: /dev/disk/by-id/ata-SAMSUNG_SSD_PM830_2.5__7mm_256GB_S0TZNSACC10310
+storage_ssd_partition_path: /dev/disk/by-id/ata-SAMSUNG_SSD_PM830_2.5__7mm_256GB_S0TZNSACC10310-part1
+storage_ssd_label: ssd-storage
+storage_ssd_mount_path: /mnt/ssd-storage
+storage_ssd_directories:
+  - /mnt/ssd-storage/local-pv
+  - /mnt/ssd-storage/databases
+  - /mnt/ssd-storage/kubevirt
+  - /mnt/ssd-storage/containers

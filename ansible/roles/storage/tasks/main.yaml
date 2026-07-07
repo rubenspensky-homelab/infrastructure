@@ -1,0 +1,154 @@
+---
+- name: Assert system disk ID is configured when storage is enabled
+  ansible.builtin.assert:
+    that:
+      - storage_system_disk_id is defined
+      - storage_system_disk_id | length > 0
+    fail_msg: storage_system_disk_id must be configured before managing storage disks.
+  when: storage_hdd_enabled | default(false) | bool or storage_ssd_enabled | default(false) | bool
+
+- name: Resolve system disk real device
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - -f
+      - "{{ storage_system_disk_id }}"
+  register: storage_system_disk_realpath
+  changed_when: false
+  when: storage_hdd_enabled | default(false) | bool or storage_ssd_enabled | default(false) | bool
+
+- name: Manage HDD backup and static storage
+  when: storage_hdd_enabled | default(false) | bool
+  block:
+    - name: Assert HDD storage variables are configured
+      ansible.builtin.assert:
+        that:
+          - storage_hdd_disk_id is defined
+          - storage_hdd_disk_id | length > 0
+          - storage_hdd_uuid is defined
+          - storage_hdd_uuid | length > 0
+          - storage_hdd_mount_path is defined
+          - storage_hdd_mount_path | length > 0
+          - not (storage_hdd_format | default(false) | bool)
+        fail_msg: HDD storage must have disk ID, UUID, mount path, and storage_hdd_format=false.
+
+    - name: Resolve HDD real device
+      ansible.builtin.command:
+        argv:
+          - readlink
+          - -f
+          - "{{ storage_hdd_disk_id }}"
+      register: storage_hdd_disk_realpath
+      changed_when: false
+
+    - name: Assert HDD is not the system disk
+      ansible.builtin.assert:
+        that:
+          - storage_hdd_disk_realpath.stdout != storage_system_disk_realpath.stdout
+        fail_msg: "Refusing to manage HDD storage because {{ storage_hdd_disk_id }} resolves to the system disk {{ storage_system_disk_id }}."
+
+    - name: Mount HDD backup and static storage
+      ansible.posix.mount:
+        path: "{{ storage_hdd_mount_path }}"
+        src: "UUID={{ storage_hdd_uuid }}"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    - name: Create HDD storage directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop: "{{ storage_hdd_directories | default([]) }}"
+
+- name: Manage SSD fast local Kubernetes storage
+  when: storage_ssd_enabled | default(false) | bool
+  block:
+    - name: Assert SSD storage variables are configured
+      ansible.builtin.assert:
+        that:
+          - storage_ssd_disk_id is defined
+          - storage_ssd_disk_id | length > 0
+          - storage_ssd_partition_path is defined
+          - storage_ssd_partition_path | length > 0
+          - storage_ssd_label is defined
+          - storage_ssd_label | length > 0
+          - storage_ssd_mount_path is defined
+          - storage_ssd_mount_path | length > 0
+        fail_msg: SSD storage must have disk ID, partition path, label, and mount path configured.
+
+    - name: Install SSD storage management tools
+      ansible.builtin.apt:
+        name:
+          - e2fsprogs
+          - parted
+        state: present
+        update_cache: true
+
+    - name: Resolve SSD real device
+      ansible.builtin.command:
+        argv:
+          - readlink
+          - -f
+          - "{{ storage_ssd_disk_id }}"
+      register: storage_ssd_disk_realpath
+      changed_when: false
+
+    - name: Assert SSD is not the system disk
+      ansible.builtin.assert:
+        that:
+          - storage_ssd_disk_realpath.stdout != storage_system_disk_realpath.stdout
+        fail_msg: "Refusing to manage SSD storage because {{ storage_ssd_disk_id }} resolves to the system disk {{ storage_system_disk_id }}."
+
+    - name: Assert HDD and SSD are different disks
+      ansible.builtin.assert:
+        that:
+          - storage_ssd_disk_realpath.stdout != storage_hdd_disk_realpath.stdout
+        fail_msg: Refusing to manage storage because HDD and SSD disk IDs resolve to the same real device.
+      when: storage_hdd_enabled | default(false) | bool
+
+    # Destructive if pointed at the wrong disk: this creates a GPT and one whole-disk partition.
+    - name: Create SSD whole-disk GPT partition
+      community.general.parted:
+        device: "{{ storage_ssd_disk_id }}"
+        label: gpt
+        number: 1
+        state: present
+        part_start: 0%
+        part_end: 100%
+        fs_type: ext4
+      when: storage_ssd_partition | default(false) | bool
+
+    - name: Wait for SSD partition path
+      ansible.builtin.wait_for:
+        path: "{{ storage_ssd_partition_path }}"
+        timeout: 30
+      when: storage_ssd_partition | default(false) | bool
+
+    # Destructive on first run: this formats only the configured SSD partition, never the HDD.
+    - name: Format SSD partition as ext4
+      community.general.filesystem:
+        dev: "{{ storage_ssd_partition_path }}"
+        fstype: ext4
+        opts: "-L {{ storage_ssd_label }}"
+      when: storage_ssd_format | default(false) | bool
+
+    - name: Mount SSD fast local storage
+      ansible.posix.mount:
+        path: "{{ storage_ssd_mount_path }}"
+        src: "LABEL={{ storage_ssd_label }}"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    - name: Create SSD storage directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop: "{{ storage_ssd_directories | default([]) }}"
