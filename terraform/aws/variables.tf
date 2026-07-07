@@ -22,5 +22,6 @@ variable "secrets" {
   default = [
     "homelab/cloudflare/tunnel-token",
     "homelab/github/arc-app",
+    "homelab/aws/s3-backup",
   ]
 }
