@@ -1,0 +1,14 @@
+---
+- name: Keep laptop running when lid is closed
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/logind.conf
+    regexp: "^#?HandleLidSwitch="
+    line: "HandleLidSwitch=ignore"
+  notify: Restart systemd-logind
+
+- name: Keep laptop running on external power
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/logind.conf
+    regexp: "^#?HandleLidSwitchExternalPower="
+    line: "HandleLidSwitchExternalPower=ignore"
+  notify: Restart systemd-logind

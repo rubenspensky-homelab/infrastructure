@@ -1,0 +1,11 @@
+---
+- name: Install common tools
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - vim
+      - ca-certificates
+      - gnupg
+    state: present
+    update_cache: true

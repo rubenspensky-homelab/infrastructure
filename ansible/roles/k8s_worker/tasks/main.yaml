@@ -1,0 +1,37 @@
+---
+- name: Check if worker already joined the cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
+- name: Check if control plane is initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: control_plane_admin_conf
+  failed_when: false
+  ignore_unreachable: true
+  when: not kubelet_conf.stat.exists
+
+- name: Create worker join command on control plane
+  ansible.builtin.command: kubeadm token create --print-join-command
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: kubeadm_worker_join_command
+  changed_when: false
+  when:
+    - not kubelet_conf.stat.exists
+    - control_plane_admin_conf.stat.exists | default(false)
+
+- name: Join worker to Kubernetes cluster
+  ansible.builtin.command: "{{ kubeadm_worker_join_command.stdout }}"
+  when:
+    - not kubelet_conf.stat.exists
+    - control_plane_admin_conf.stat.exists | default(false)
+  changed_when: true
+
+- name: Skip join until control plane is initialized
+  ansible.builtin.debug:
+    msg: "Control plane is not initialized yet; worker prerequisites are ready, join skipped."
+  when:
+    - not kubelet_conf.stat.exists
+    - not (control_plane_admin_conf.stat.exists | default(false))

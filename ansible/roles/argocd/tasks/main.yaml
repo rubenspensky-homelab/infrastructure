@@ -1,0 +1,40 @@
+---
+- name: Check Argo CD namespace
+  ansible.builtin.command: "kubectl get namespace {{ argocd_namespace }}"
+  register: argocd_namespace_check
+  changed_when: false
+  failed_when: false
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Create Argo CD namespace
+  ansible.builtin.command: "kubectl create namespace {{ argocd_namespace }}"
+  when: argocd_namespace_check.rc != 0
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Add Argo Helm repository
+  ansible.builtin.command: helm repo add argo https://argoproj.github.io/argo-helm
+  register: argocd_helm_repo
+  changed_when: "'has been added' in argocd_helm_repo.stdout"
+  failed_when:
+    - argocd_helm_repo.rc != 0
+    - "'already exists' not in argocd_helm_repo.stderr"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Update Helm repositories
+  ansible.builtin.command: helm repo update
+  changed_when: false
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Install Argo CD
+  ansible.builtin.command: >-
+    helm upgrade --install argocd argo/argo-cd
+    --namespace {{ argocd_namespace }}
+    --set server.service.type={{ argocd_server_service_type }}
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf

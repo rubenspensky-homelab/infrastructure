@@ -1,0 +1,27 @@
+---
+- name: Add Cilium Helm repository
+  ansible.builtin.command: helm repo add cilium https://helm.cilium.io/
+  register: cilium_helm_repo
+  changed_when: "'has been added' in cilium_helm_repo.stdout"
+  failed_when:
+    - cilium_helm_repo.rc != 0
+    - "'already exists' not in cilium_helm_repo.stderr"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Update Helm repositories
+  ansible.builtin.command: helm repo update
+  changed_when: false
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Install Cilium
+  ansible.builtin.command: >-
+    helm upgrade --install cilium cilium/cilium
+    --version {{ cilium_version }}
+    --namespace kube-system
+    --set ipam.mode=kubernetes
+    --set operator.replicas={{ cilium_operator_replicas }}
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf

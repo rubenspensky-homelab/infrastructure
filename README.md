@@ -9,7 +9,7 @@ It is separate from the Kubernetes GitOps repositories. This repo is for prepari
 Current and planned areas:
 
 - `autoinstall-os/`: Debian automated installer ISO builder using preseed.
-- `ansible/`: planned host configuration and post-install automation.
+- `ansible/`: host configuration and Kubernetes bootstrap automation.
 - `terraform/`: planned AWS infrastructure for secrets and S3 backups.
 
 ## Repository Layout
@@ -30,11 +30,11 @@ infra/
   terraform/
     README.md
     aws/
-      secrets/
-      backups/
+      README.md
+      *.tf
 ```
 
-Only `autoinstall-os/` exists today. The Ansible and Terraform directories are intentionally left as planned structure until implemented.
+`autoinstall-os/`, `ansible/`, and `terraform/aws/` are currently implemented.
 
 ## What Belongs Here
 
@@ -94,3 +94,16 @@ Generated output is ignored by Git:
 ```text
 autoinstall-os/dist/debian-autoinstall-ops.iso
 ```
+
+## Ansible
+
+The Kubernetes host bootstrap workflow is in `ansible/`.
+
+```sh
+cd ansible
+ansible-playbook site.yaml --limit k8s-worker-02 --check
+```
+
+See `ansible/README.md` for the full worker-only test, temporary single-node control plane test, full cluster bootstrap, and Argo CD addon steps.
+
+The current validated Ansible path can bootstrap `k8s-worker-02` as a temporary single-node Kubernetes 1.36 control plane with Cilium and Argo CD. The normal target topology remains one PC control plane plus two laptop workers.

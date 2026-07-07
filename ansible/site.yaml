@@ -1,0 +1,47 @@
+---
+- name: Base configuration
+  hosts: all
+  become: true
+
+  roles:
+    - common
+    - hostname
+
+- name: Laptop configuration
+  hosts: laptops
+  become: true
+
+  roles:
+    - laptop
+
+- name: NVIDIA GPU host configuration
+  hosts: gpu
+  become: true
+
+  roles:
+    - nvidia_gpu
+
+- name: Kubernetes common configuration
+  hosts: k8s_cluster
+  become: true
+
+  roles:
+    - k8s_prereqs
+    - containerd
+    - kubeadm
+
+- name: Kubernetes control plane
+  hosts: control_plane
+  become: true
+
+  roles:
+    - k8s_control_plane
+    - helm
+    - cilium
+
+- name: Kubernetes workers
+  hosts: workers
+  become: true
+
+  roles:
+    - k8s_worker

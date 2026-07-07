@@ -1,0 +1,8 @@
+---
+- name: Kubernetes cluster addons
+  hosts: control_plane
+  become: true
+
+  roles:
+    - helm
+    - argocd

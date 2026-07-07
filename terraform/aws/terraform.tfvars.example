@@ -1,0 +1,10 @@
+aws_region  = "us-east-2"
+name_prefix = "homelab"
+
+# Set to null to disable automatic backup expiration.
+backup_lifecycle_expiration_days = 180
+
+secrets = [
+  "homelab/cloudflare/tunnel-token",
+  "homelab/github/arc-app",
+]

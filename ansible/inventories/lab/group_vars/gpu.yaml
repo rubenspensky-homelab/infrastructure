@@ -1,0 +1,5 @@
+---
+nvidia_gpu_debian_components: "main contrib non-free non-free-firmware"
+nvidia_container_toolkit_repo: "https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /"
+containerd_enable_nvidia: true
+containerd_default_runtime_name: "nvidia"

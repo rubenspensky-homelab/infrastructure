@@ -1,0 +1,80 @@
+---
+- name: Enable Debian non-free repositories
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/debian.sources
+    regexp: '^Components:.*$'
+    replace: "Components: {{ nvidia_gpu_debian_components }}"
+  register: debian_sources_components
+
+- name: Update apt cache after enabling non-free repositories
+  ansible.builtin.apt:
+    update_cache: true
+  when: debian_sources_components.changed
+
+- name: Install NVIDIA driver packages
+  ansible.builtin.apt:
+    name:
+      - linux-headers-amd64
+      - firmware-misc-nonfree
+      - nvidia-driver
+    state: present
+    update_cache: true
+
+- name: Create apt keyring directory
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download NVIDIA container toolkit apt key
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/gpgkey
+    dest: /usr/share/keyrings/nvidia-container-toolkit-keyring.asc
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure NVIDIA container toolkit apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.asc] {{ nvidia_container_toolkit_repo }}
+  register: nvidia_container_toolkit_repo_file
+
+- name: Update apt cache after configuring NVIDIA repository
+  ansible.builtin.apt:
+    update_cache: true
+  when: nvidia_container_toolkit_repo_file.changed
+
+- name: Install NVIDIA container toolkit
+  ansible.builtin.apt:
+    name:
+      - nvidia-container-toolkit
+    state: present
+    update_cache: true
+
+- name: Check NVIDIA container runtime binary
+  ansible.builtin.stat:
+    path: /usr/bin/nvidia-container-runtime
+  register: nvidia_container_runtime_binary
+
+- name: Fail when NVIDIA container runtime is missing
+  ansible.builtin.fail:
+    msg: "nvidia-container-runtime was not installed by nvidia-container-toolkit."
+  when: not nvidia_container_runtime_binary.stat.exists
+
+- name: Check NVIDIA driver availability
+  ansible.builtin.command: nvidia-smi
+  register: nvidia_smi
+  changed_when: false
+  failed_when: false
+
+- name: Report NVIDIA driver status
+  ansible.builtin.debug:
+    msg: "nvidia-smi is not available yet. Reboot the node after the driver install, then run the playbook again."
+  when: nvidia_smi.rc != 0

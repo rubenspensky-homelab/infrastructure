@@ -1,0 +1,13 @@
+---
+kubernetes_version: "1.36"
+kubernetes_apt_repo_version: "v1.36"
+k8s_control_plane_endpoint: "192.168.0.110"
+pod_network_cidr: "10.244.0.0/16"
+containerd_sandbox_image: "registry.k8s.io/pause:3.10.2"
+containerd_cni_bin_dir: "/opt/cni/bin"
+containerd_enable_nvidia: false
+containerd_default_runtime_name: "runc"
+cilium_version: "1.16.5"
+cilium_operator_replicas: 1
+argocd_namespace: "argocd"
+argocd_server_service_type: "ClusterIP"
