@@ -5,6 +5,7 @@
 - `autoinstall-os/` builds a Debian installer ISO from a local netinst ISO plus `preseed.cfg`.
 - `ansible/` bootstraps Debian 13 hosts into Kubernetes 1.36 with `kubeadm`, `containerd`, Cilium, Helm, Argo CD addons, storage mounts, and optional NVIDIA host/runtime support.
 - `terraform/aws/` creates AWS support resources only: S3 backups bucket, Secrets Manager secret containers, IAM users, and IAM policies.
+- `terraform/cloudflare/` manages Cloudflare support resources for `rubenspensky.com`: DNS, existing tunnel remote config, and Pages projects.
 
 ## Safety
 - Do not commit generated ISOs, kubeconfigs, private keys, Terraform state, `.tfvars`, local env files, IAM access keys, or secret values.
@@ -63,3 +64,15 @@
 - Managed secrets are containers only: `homelab/cloudflare/tunnel-token`, `homelab/github/arc-app`, and `homelab/aws/s3-backup`; put values with `aws secretsmanager put-secret-value`, not Terraform.
 - IAM users are `homelab-s3-backups` and `homelab-secrets-reader`; create access keys manually with `aws iam create-access-key` so keys do not land in Terraform state.
 - The backups bucket name is `homelab-backups-<aws-account-id>` and has versioning, SSE-S3 encryption, public access blocking, and lifecycle expiration.
+
+## Terraform Cloudflare
+- Run Terraform from `terraform/cloudflare/`.
+- Validate with `terraform fmt -check -recursive` and `terraform validate` after `terraform init` has installed providers.
+- Terraform state uses S3 backend bucket `homelab-tf-state-rubenspensky`, key `infra/cloudflare/terraform.tfstate`, region `us-east-2`, and S3 native `use_lockfile = true`.
+- The Cloudflare provider uses `CLOUDFLARE_API_TOKEN`; do not commit tokens, `.tfvars`, state, tunnel tokens, or Pages deployment artifacts.
+- Keep the existing `homelab-k8s` tunnel imported rather than recreating it unless explicitly requested; Kubernetes already depends on its working `cloudflared` token.
+- Preserve tunnel `config_src = "cloudflare"` so remote config remains managed by Cloudflare/Terraform.
+- `*.rubenspensky.com` points to the Kubernetes tunnel; specific DNS records such as `frontend-demo.rubenspensky.com` can override the wildcard for Pages.
+- The first Pages project is `frontend-demo` with custom hostname `frontend-demo.rubenspensky.com`.
+- Cloudflare Pages deployment contents are not managed here; deploy static builds separately, for example with Wrangler direct upload.
+- For future Pages sites, prefer a Terraform map/`for_each` for projects, DNS, and domains, while CI/CD handles build and `wrangler pages deploy`.
