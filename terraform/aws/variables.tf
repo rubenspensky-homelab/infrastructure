@@ -32,5 +32,6 @@ variable "parameters" {
   default = [
     "/homelab/authentik",
     "/homelab/umamik",
+    "/homelab/grafana"
   ]
 }
