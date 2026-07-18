@@ -60,11 +60,22 @@ data "aws_iam_policy_document" "secrets_reader" {
 
     resources = [for secret in aws_secretsmanager_secret.homelab : secret.arn]
   }
+
+  statement {
+    sid = "ReadHomelabParameters"
+
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+
+    resources = [for parameter in aws_ssm_parameter.homelab : parameter.arn]
+  }
 }
 
 resource "aws_iam_policy" "secrets_reader" {
   name        = "${var.name_prefix}-secrets-read"
-  description = "Read-only access to selected homelab Secrets Manager secrets."
+  description = "Read-only access to selected homelab secrets and parameters."
   policy      = data.aws_iam_policy_document.secrets_reader.json
 }
 

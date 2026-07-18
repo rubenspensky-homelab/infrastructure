@@ -27,3 +27,8 @@ output "secret_arns" {
   description = "Secrets Manager ARNs created by this project."
   value       = { for name, secret in aws_secretsmanager_secret.homelab : name => secret.arn }
 }
+
+output "parameter_arns" {
+  description = "SSM Parameter Store ARNs created by this project."
+  value       = { for name, parameter in aws_ssm_parameter.homelab : name => parameter.arn }
+}

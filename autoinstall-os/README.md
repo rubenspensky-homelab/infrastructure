@@ -56,6 +56,8 @@ dist/debian-autoinstall-ops.iso
 
 The generated ISO boots directly into the automated text installer for both BIOS and UEFI boot paths.
 
+Note: on `k8s-control-01`, booting the installer USB in Legacy/BIOS mode can install legacy GRUB even though `preseed.cfg` creates `/boot/efi`. Boot the installer explicitly in UEFI mode and disable CSM/Legacy boot if needed.
+
 ## Installed System
 
 The generated installer creates:

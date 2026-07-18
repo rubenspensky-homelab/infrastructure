@@ -25,3 +25,12 @@ variable "secrets" {
     "homelab/aws/s3-backup",
   ]
 }
+
+variable "parameters" {
+  description = "SSM Parameter Store names to create. Values are intentionally not managed by Terraform."
+  type        = set(string)
+  default = [
+    "/homelab/authentik",
+    "/homelab/umamik",
+  ]
+}
