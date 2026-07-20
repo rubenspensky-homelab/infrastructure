@@ -11,7 +11,7 @@ Terraform state is stored in the S3 bucket `homelab-tf-state-rubenspensky` using
 - Zone: `rubenspensky.com`
 - Existing tunnel: `homelab-k8s`
 - DNS: `*.rubenspensky.com` points to the tunnel
-- Pages project: `frontend-demo`
+- Pages project: `frontend-demo`, connected to `rubenspensky-homelab/frontend-demo`
 - Pages domain: `frontend-demo.rubenspensky.com`
 
 The tunnel is imported instead of recreated because it is already healthy and Kubernetes already has a working `cloudflared` token.
@@ -28,21 +28,21 @@ terraform apply
 
 The first apply imports the existing tunnel, tunnel remote config, and wildcard DNS record into Terraform state, then creates the Pages project and its custom domain.
 
-## Static Deploys
+## Pages Deploys
 
-The simplest deploy path for `frontend-demo` is direct upload with Wrangler from the frontend build directory:
+The `frontend-demo` Pages project is connected to GitHub repo `rubenspensky-homelab/frontend-demo`. Cloudflare builds production deployments from the `main` branch with:
 
 ```sh
-npx wrangler pages deploy dist --project-name frontend-demo
+npm ci && npm run build
 ```
 
-Wrangler uses `CLOUDFLARE_API_TOKEN` from the environment when it is set. For local manual use, `npx wrangler login` can also provide credentials.
+The build output directory is `dist`. After Terraform applies the Pages project source and build config, pushes to `main` trigger Cloudflare Pages deployments automatically.
 
-Cloudflare Pages deployment contents are intentionally not managed by Terraform. Terraform creates projects, DNS, and custom domains; CI/CD builds and uploads static assets.
+Cloudflare Pages deployment contents are intentionally not managed by Terraform. Terraform creates projects, DNS, custom domains, and the Git/build configuration; Cloudflare Pages builds and deploys static assets.
 
 ## Future Pages Sites
 
-For more static sites, prefer a Terraform map with `for_each` so each site declares its project name, hostname, and production branch in one place. The CI/CD pipeline for each site should deploy to the matching Pages project with Wrangler.
+For more static sites, prefer a Terraform map with `for_each` so each site declares its project name, hostname, production branch, Git repo, and build settings in one place.
 
 Example shape:
 
@@ -57,14 +57,6 @@ pages_sites = {
 
 Recommended split:
 
-- Terraform manages Cloudflare Pages projects, DNS records, and Pages custom domains.
-- CI/CD runs application tests, builds static assets, and deploys with Wrangler.
+- Terraform manages Cloudflare Pages projects, DNS records, Pages custom domains, and Git/build configuration.
+- Cloudflare Pages builds static assets and deploys when the source repo changes.
 - Static build artifacts, deployment tokens, and Pages output directories stay out of this repo.
-
-Typical CI/CD deploy command:
-
-```sh
-npx wrangler pages deploy dist --project-name "$PAGES_PROJECT_NAME" --branch "$BRANCH_NAME"
-```
-
-Git-backed Pages deployments can be added later if Cloudflare should own the build step directly.
