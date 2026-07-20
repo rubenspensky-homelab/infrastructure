@@ -4,6 +4,14 @@ This repository contains host bootstrap and supporting infrastructure code for t
 
 It is separate from the Kubernetes GitOps repositories. This repo is for preparing machines and external support services; Kubernetes manifests remain in the GitOps source-of-truth repos.
 
+## Architecture Overview
+
+![Homelab infrastructure architecture](./diagram.png)
+
+The diagram shows the current homelab support architecture. Ansible is the main automation layer for provisioning, configuration, and orchestration over SSH using the inventory. The Kubernetes cluster is composed of one control plane node, `k8s-control-01`, and two worker nodes, `k8s-worker-01` and `k8s-worker-02`.
+
+External support services are managed separately with Terraform. Cloudflare provides DNS, the Kubernetes tunnel, and Pages resources, while AWS provides support services such as S3, Secrets Manager, and Parameter Store. Kubernetes application manifests remain outside this repository in the GitOps source-of-truth repos.
+
 ## Scope
 
 Current and planned areas:
@@ -132,10 +140,27 @@ Current Cloudflare resources:
 - `frontend-demo` is the first Cloudflare Pages project.
 - `frontend-demo.rubenspensky.com` is a specific Pages hostname that overrides the wildcard DNS record.
 
-Pages deployments are handled outside Terraform. From a static frontend build directory, deploy with Wrangler:
+Pages deployments are handled outside Terraform through the Cloudflare Pages Git integration. Terraform defines the Pages project, DNS records, and custom domain, while Cloudflare builds and deploys the frontend directly from the connected Git repository.
+
+For future static sites, keep Terraform responsible for Pages projects, DNS, and custom domains, and keep the Git-connected Pages project or CI/CD responsible for build and deploy.
+
+## Terraform AWS
+
+AWS support resources are managed from `terraform/aws/`.
 
 ```sh
-npx wrangler pages deploy dist --project-name frontend-demo
+cd terraform/aws
+terraform init
+terraform plan
 ```
 
-For future static sites, keep Terraform responsible for Pages projects, DNS, and custom domains, and keep CI/CD responsible for build and deploy.
+This stack uses the S3 backend key `infra/aws/terraform.tfstate` and creates AWS resources used by the cluster and its backup/secret workflows.
+
+Current AWS resources:
+
+- S3 backups bucket: `homelab-backups-<aws-account-id>`, intended for Velero backups.
+- Secrets Manager secret containers, including Cloudflare tunnel, GitHub ARC app, and S3 backup credentials.
+- SSM Parameter Store secure parameters for cluster passwords and service configuration values.
+- IAM users and scoped policies for S3 backups and secret reads.
+
+Terraform creates the containers and access policies, but secret values and IAM access keys are created outside Terraform so they do not land in Terraform state.
