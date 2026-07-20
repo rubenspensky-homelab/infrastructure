@@ -16,6 +16,15 @@ resource "cloudflare_dns_record" "frontend_demo_pages" {
   ttl     = 1
 }
 
+resource "cloudflare_dns_record" "portfolio_pages" {
+  zone_id = var.zone_id
+  name    = local.portfolio_hostname
+  type    = "CNAME"
+  content = cloudflare_pages_project.portfolio.subdomain
+  proxied = true
+  ttl     = 1
+}
+
 import {
   to = cloudflare_dns_record.homelab_wildcard
   id = "${var.zone_id}/538bef16ddb86ac595b13e99a789f004"

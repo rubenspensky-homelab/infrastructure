@@ -13,10 +13,12 @@ Terraform state is stored in the S3 bucket `homelab-tf-state-rubenspensky` using
 - DNS: `*.rubenspensky.com` points to the tunnel
 - Pages project: `frontend-demo`, connected to `rubenspensky-homelab/frontend-demo`
 - Pages domain: `frontend-demo.rubenspensky.com`
+- Pages project: `portfolio`, connected to `rubenspensky-homelab/portfolio`
+- Pages domain: `rubenspensky.com`
 
 The tunnel is imported instead of recreated because it is already healthy and Kubernetes already has a working `cloudflared` token.
 
-The wildcard DNS record sends normal homelab subdomains to Kubernetes. More specific records, such as `frontend-demo.rubenspensky.com`, override the wildcard and can point to Cloudflare Pages.
+The apex DNS record sends `rubenspensky.com` to the portfolio Pages project. The wildcard DNS record sends normal homelab subdomains to Kubernetes. More specific records, such as `frontend-demo.rubenspensky.com`, override the wildcard and can point to Cloudflare Pages.
 
 ## Usage
 
@@ -30,7 +32,7 @@ The first apply imports the existing tunnel, tunnel remote config, and wildcard 
 
 ## Pages Deploys
 
-The `frontend-demo` Pages project is connected to GitHub repo `rubenspensky-homelab/frontend-demo`. Cloudflare builds production deployments from the `main` branch with:
+The `frontend-demo` and `portfolio` Pages projects are connected to GitHub repos under `rubenspensky-homelab`. Cloudflare builds production deployments from the `main` branch with:
 
 ```sh
 npm ci && npm run build

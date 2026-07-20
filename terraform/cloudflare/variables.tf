@@ -39,3 +39,9 @@ variable "frontend_demo_project_name" {
   type        = string
   default     = "frontend-demo"
 }
+
+variable "portfolio_project_name" {
+  description = "Cloudflare Pages project name for the portfolio site."
+  type        = string
+  default     = "portfolio"
+}
