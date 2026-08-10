@@ -1,8 +1,10 @@
 # Homelab Cloudflare Terraform
 
-This project manages Cloudflare support resources for `rubenspensky.com`: DNS, the existing Kubernetes Cloudflare Tunnel remote configuration, and Cloudflare Pages projects.
+This project manages Cloudflare support resources for `rubenspensky.com`: DNS, Email Routing, the existing Kubernetes Cloudflare Tunnel remote configuration, and Cloudflare Pages projects.
 
 It uses the `CLOUDFLARE_API_TOKEN` environment variable. Do not commit tokens, `.tfvars`, Terraform state, or tunnel secrets.
+
+The token needs permissions for the managed resources, including `Email Routing Addresses Read`, `Email Routing Addresses Write`, `Email Routing Rules Read`, `Email Routing Rules Write`, `Zone Settings Read`, and `Zone Settings Write` for Email Routing.
 
 Terraform state is stored in the S3 bucket `homelab-tf-state-rubenspensky` using the key `infra/cloudflare/terraform.tfstate`.
 
@@ -11,6 +13,7 @@ Terraform state is stored in the S3 bucket `homelab-tf-state-rubenspensky` using
 - Zone: `rubenspensky.com`
 - Existing tunnel: `homelab-k8s`
 - DNS: `*.rubenspensky.com` points to the tunnel
+- Email Routing: `ruben@rubenspensky.com` forwards to `rubenvelazquez244@gmail.com`
 - Pages project: `frontend-demo`, connected to `rubenspensky-homelab/frontend-demo`
 - Pages domain: `frontend-demo.rubenspensky.com`
 - Pages project: `portfolio`, connected to `rubenspensky-homelab/portfolio`
@@ -29,6 +32,8 @@ terraform apply
 ```
 
 The first apply imports the existing tunnel, tunnel remote config, and wildcard DNS record into Terraform state, then creates the Pages project and its custom domain.
+
+Cloudflare Email Routing sends a verification email to `rubenvelazquez244@gmail.com`. The alias does not forward mail until that destination address is verified.
 
 ## Pages Deploys
 

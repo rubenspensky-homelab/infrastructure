@@ -32,6 +32,7 @@ variable "parameters" {
   default = [
     "/homelab/authentik",
     "/homelab/umamik",
-    "/homelab/grafana"
+    "/homelab/grafana",
+    "/homelab/sonarqube"
   ]
 }
