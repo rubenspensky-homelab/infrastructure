@@ -33,6 +33,7 @@ variable "parameters" {
     "/homelab/authentik",
     "/homelab/umamik",
     "/homelab/grafana",
-    "/homelab/sonarqube"
+    "/homelab/sonarqube",
+    "/homelab/artifactory"
   ]
 }
